@@ -31,11 +31,17 @@ export class CubicSpline {
 	}
 
 	compute(t: number): number {
+		if (this.x.length < 2 || t < this.x[0] || t > this.x[this.x.length - 1]) {
+			return 0;
+		}
 		let i = this.getIndex(t);
 		return Math.pow(t, 3) * this.a[i] + Math.pow(t, 2) * this.b[i] + t * this.c[i] + this.d[i];
 	}
 
 	computeDerivative(t: number): number {
+		if (this.x.length < 2 || t < this.x[0] || t > this.x[this.x.length - 1]) {
+			return 0;
+		}
 		let i = this.getIndex(t);
 		return 3 * Math.pow(t, 2) * this.a[i] + 2 * t * this.b[i] + this.c[i];
 	}
@@ -64,8 +70,4 @@ export const getCubicSpline = (points: Point[]): CubicSpline => {
 	}
 
 	return new CubicSpline(x, a, b, c, d);
-};
-
-export const getNewVelocity = (spline: CubicSpline, x: number, v: number): number => {
-	/* todo */
 };
