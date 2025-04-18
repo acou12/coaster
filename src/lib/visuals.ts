@@ -1,4 +1,5 @@
 import type { Coaster } from './coaster';
+import type { Point } from './point';
 
 export const drawCoaster = (
 	context: CanvasRenderingContext2D,
@@ -38,4 +39,19 @@ export const drawCoasterParticipant = (context: CanvasRenderingContext2D, x: num
 	context.fillStyle = 'black';
 	context.arc(x, y, 10, 0, 2 * Math.PI);
 	context.fill();
+};
+
+export const drawKnots = (
+	context: CanvasRenderingContext2D,
+	canvas: HTMLCanvasElement,
+	points: Point[],
+	draggingPoint: number
+) => {
+	for (let i = 0; i < points.length; i++) {
+		let p = points[i];
+		context.beginPath();
+		context.fillStyle = draggingPoint === i ? '#606060' : '#808080';
+		context.arc(p.x, canvas.height - p.y, draggingPoint === i ? 15 : 10, 0, 2 * Math.PI);
+		context.fill();
+	}
 };
