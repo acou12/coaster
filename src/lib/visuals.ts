@@ -1,57 +1,57 @@
+import type { RenderingContext } from './camera';
 import type { Coaster } from './coaster';
 import type { Point } from './point';
 
-export const drawCoaster = (
-	context: CanvasRenderingContext2D,
-	canvas: HTMLCanvasElement,
-	precision: number,
-	coaster: Coaster
-) => {
+export const drawCoaster = (rc: RenderingContext, precision: number, coaster: Coaster) => {
 	/* draw the scaffolds */
-	for (let x = 0; x < canvas.width; x += precision) {
-		context.beginPath();
+	for (let x = -rc.canvas.width * 5; x < rc.canvas.width * 4; x += precision) {
+		rc.context.beginPath();
 
-		context.strokeStyle = '#ffe1a3';
-		context.lineWidth = 5;
+		rc.context.strokeStyle = '#ffe1a3';
+		rc.context.lineWidth = 5;
 
-		context.moveTo(x, canvas.height);
-		context.lineTo(x, canvas.height - coaster.getHeight(x));
+		rc.context.moveTo(rc.camera.transformX(x), rc.camera.transformY(0));
+		rc.context.lineTo(rc.camera.transformX(x), rc.camera.transformY(coaster.getHeight(x)));
 
-		context.stroke();
+		rc.context.stroke();
 	}
 
 	/* draw the rail */
-	for (let x = 0; x < canvas.width; x += precision) {
-		context.beginPath();
+	for (let x = -rc.canvas.width * 5; x < rc.canvas.width * 4; x += precision) {
+		rc.context.beginPath();
 
-		context.strokeStyle = '#808080';
-		context.lineWidth = 5;
+		rc.context.strokeStyle = '#808080';
+		rc.context.lineWidth = 5;
 
-		context.moveTo(x, canvas.height - coaster.getHeight(x));
-		context.lineTo(x + precision, canvas.height - coaster.getHeight(x + precision));
+		rc.context.moveTo(rc.camera.transformX(x), rc.camera.transformY(coaster.getHeight(x)));
+		rc.context.lineTo(
+			rc.camera.transformX(x + precision),
+			rc.camera.transformY(coaster.getHeight(x + precision))
+		);
 
-		context.stroke();
+		rc.context.stroke();
 	}
 };
 
-export const drawCoasterParticipant = (context: CanvasRenderingContext2D, x: number, y: number) => {
-	context.beginPath();
-	context.fillStyle = 'black';
-	context.arc(x, y, 10, 0, 2 * Math.PI);
-	context.fill();
+export const drawCoasterParticipant = (rc: RenderingContext, x: number, y: number) => {
+	rc.context.beginPath();
+	rc.context.fillStyle = 'black';
+	rc.context.arc(rc.camera.transformX(x), rc.camera.transformY(y), 10, 0, 2 * Math.PI);
+	rc.context.fill();
 };
 
-export const drawKnots = (
-	context: CanvasRenderingContext2D,
-	canvas: HTMLCanvasElement,
-	points: Point[],
-	draggingPoint: number
-) => {
+export const drawKnots = (rc: RenderingContext, points: Point[], draggingPoint: number) => {
 	for (let i = 0; i < points.length; i++) {
 		let p = points[i];
-		context.beginPath();
-		context.fillStyle = draggingPoint === i ? '#606060' : '#808080';
-		context.arc(p.x, canvas.height - p.y, draggingPoint === i ? 15 : 10, 0, 2 * Math.PI);
-		context.fill();
+		rc.context.beginPath();
+		rc.context.fillStyle = draggingPoint === i ? '#606060' : '#808080';
+		rc.context.arc(
+			rc.camera.transformX(p.x),
+			rc.camera.transformY(p.y),
+			draggingPoint === i ? 15 : 10,
+			0,
+			2 * Math.PI
+		);
+		rc.context.fill();
 	}
 };

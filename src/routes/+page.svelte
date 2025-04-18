@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { RenderingContext, StandardCamera, type Camera } from '$lib/camera';
 	import { CubicCoaster, type Coaster } from '$lib/coaster';
 	import { getCubicSpline } from '$lib/methods';
 	import { Point } from '$lib/point';
@@ -10,24 +11,44 @@
 
 	let draggingPoint = -1;
 
+	let draggingCamera = false;
+
 	let coaster: Coaster;
+	let camera: Camera;
+
 	let v = 1;
 	let x = 0.1;
 
 	onMount(() => {
 		context = canvas.getContext('2d')!;
+		camera = new StandardCamera(canvas);
+
+		window.addEventListener('keydown', (e) => {
+			if (e.key === ' ') {
+				draggingCamera = true;
+			}
+		});
+
+		window.addEventListener('keyup', (e) => {
+			if (e.key === ' ') {
+				draggingCamera = false;
+			}
+		});
+
 		canvas.addEventListener('mousedown', (e) => {
+			let rx = camera.inverseTransformX(e.clientX);
+			let ry = camera.inverseTransformY(e.clientY);
 			let foundOne = false;
 			for (let i = 0; i < points.length; i++) {
 				const point = points[i];
-				if (Math.hypot(point.x - e.clientX, canvas.height - point.y - e.clientY) <= 10) {
+				if (Math.hypot(point.x - rx, point.y - ry) <= 10) {
 					draggingPoint = i;
 					foundOne = true;
 					break;
 				}
 			}
 			if (!foundOne) {
-				points.push(new Point(e.clientX, canvas.height - e.clientY));
+				points.push(new Point(rx, ry));
 				coaster = new CubicCoaster(getCubicSpline(points));
 				v = 1;
 				x = 0.1;
@@ -35,9 +56,9 @@
 		});
 
 		canvas.addEventListener('mousemove', (e) => {
-			if (draggingPoint != -1) {
-				points[draggingPoint].x = e.clientX;
-				points[draggingPoint].y = canvas.height - e.clientY;
+			if (draggingPoint !== -1) {
+				points[draggingPoint].x = camera.inverseTransformX(e.clientX);
+				points[draggingPoint].y = camera.inverseTransformY(e.clientY);
 
 				if (
 					draggingPoint + 1 < points.length &&
@@ -57,6 +78,11 @@
 				}
 
 				coaster = new CubicCoaster(getCubicSpline(points));
+			}
+			if (draggingCamera) {
+				console.log('DRAGGING');
+				let p = camera.getTopLeft();
+				camera.updateTopLeft(new Point(p.x - e.movementX, p.y + e.movementY));
 			}
 		});
 		canvas.addEventListener('mouseup', (e) => {
@@ -81,18 +107,23 @@
 		context.fillStyle = 'skyblue';
 		context.fillRect(0, 0, canvas.width, canvas.height);
 
-		drawCoaster(context, canvas, /* precision = */ 10, coaster);
-		drawKnots(context, canvas, points, draggingPoint);
-		drawCoasterParticipant(context, x, canvas.height - coaster.getHeight(x));
+		let rc = new RenderingContext(camera, context, canvas);
+
+		drawCoaster(rc, /* precision = */ 10, coaster);
+		drawKnots(rc, points, draggingPoint);
+		drawCoasterParticipant(rc, x, coaster.getHeight(x));
 
 		x += v * delta * Math.cos(Math.atan(coaster.getSlant(x)));
 		v -= Math.sin(Math.atan(coaster.getSlant(x))) * 0.01;
 
-		if (x < 0) {
-			x += canvas.width;
+		let min = points.map((p) => p.x).reduce((acc, x) => Math.min(acc, x));
+		let max = points.map((p) => p.x).reduce((acc, x) => Math.max(acc, x));
+
+		if (x < min) {
+			x += max - min;
 		}
-		if (x > canvas.width) {
-			x -= canvas.width;
+		if (x > max) {
+			x -= max - min;
 		}
 
 		requestAnimationFrame(draw);
