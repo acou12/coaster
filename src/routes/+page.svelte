@@ -4,13 +4,12 @@
 	import { Point } from '$lib/point';
 	import { drawCoaster, drawCoasterParticipant } from '$lib/visuals';
 	import { onMount } from 'svelte';
-
 	let canvas: HTMLCanvasElement;
 	let context: CanvasRenderingContext2D;
 	let points: Point[] = [new Point(0, 0)];
 	let coaster: Coaster = new CubicCoaster(getCubicSpline(points));
-	let v = 0.05;
-	let x = 0;
+	let v = 1;
+	let x = 0.1;
 
 	onMount(() => {
 		context = canvas.getContext('2d')!;

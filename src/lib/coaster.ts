@@ -1,4 +1,4 @@
-import type { CubicSpline } from './methods';
+import type { CubicPiecewise } from './methods';
 
 export interface Coaster {
 	getHeight(x: number): number;
@@ -6,7 +6,7 @@ export interface Coaster {
 }
 
 export class CubicCoaster implements Coaster {
-	constructor(private spline: CubicSpline) {}
+	constructor(private spline: CubicPiecewise) {}
 
 	getSlant(x: number): number {
 		return this.spline.computeDerivative(x);

@@ -1,13 +1,12 @@
 import type { Point } from './point';
 
 /**
- * Represents a spline, a piecewise cubic function
- * with some nice properties.
+ * Represents a piecewise cubic function.
  *
  * In particular, this computes the function f where
  * f(t) = a[i]t^3 + b[i]t^2 + c[i]t + d[i] where x[i] <= t <= x[i+i].
  */
-export class CubicSpline {
+export class CubicPiecewise {
 	constructor(
 		public x: number[],
 		public a: number[],
@@ -47,7 +46,7 @@ export class CubicSpline {
 	}
 }
 
-export const getCubicSpline = (points: Point[]): CubicSpline => {
+export const getCubicSpline = (points: Point[]): CubicPiecewise => {
 	/* todo */
 	points.sort((p1, p2) => p1.x - p2.x);
 
@@ -69,5 +68,5 @@ export const getCubicSpline = (points: Point[]): CubicSpline => {
 		d[i] = yIntercept;
 	}
 
-	return new CubicSpline(x, a, b, c, d);
+	return new CubicPiecewise(x, a, b, c, d);
 };
