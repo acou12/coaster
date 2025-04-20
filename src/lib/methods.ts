@@ -70,3 +70,25 @@ export const getCubicSpline = (points: Point[]): CubicPiecewise => {
 
 	return new CubicPiecewise(x, a, b, c, d);
 };
+
+export const rungeKuttaStep = (
+	x: number,
+	t: number,
+	h: number,
+	f: (t: number, x: number) => number
+) => {
+	const K1 = h * f(t, x);
+	const K2 = h * f(t + (1 / 2) * h, x + (1 / 2) * K1);
+	const K3 = h * f((t = (1 / 2) * h), x + (1 / 2) * K2);
+	const K4 = h * f(t + h, x + K3);
+	return x + (1 / 6) * (K1 + 2 * K2 + 2 * K3 + K4);
+};
+
+export const eulersStep = (
+	x: number,
+	t: number,
+	h: number,
+	f: (t: number, x: number) => number
+) => {
+	return x + h * f(t, x);
+};

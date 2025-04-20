@@ -1,18 +1,45 @@
 <script lang="ts">
 	import { CubicCoaster, type Coaster } from '$lib/coaster';
-	import { getCubicSpline } from '$lib/methods';
+	import { eulersStep, getCubicSpline, rungeKuttaStep } from '$lib/methods';
 	import { Point } from '$lib/point';
 	import { drawCoaster, drawCoasterParticipant, drawKnots } from '$lib/visuals';
 	import { onMount } from 'svelte';
 	let canvas: HTMLCanvasElement;
 	let context: CanvasRenderingContext2D;
-	let points: Point[] = [new Point(0, 0)];
+	let points: Point[] = [
+		new Point(0, 0),
+		new Point(108, 323),
+		new Point(190, 375),
+		new Point(299, 399),
+		new Point(406, 410),
+		new Point(463, 399),
+		new Point(509, 392),
+		new Point(547, 404),
+		new Point(550, 274),
+		new Point(593, 367),
+		new Point(631, 249),
+		new Point(681, 361),
+		new Point(741, 380),
+		new Point(787, 377),
+		new Point(815, 371),
+		new Point(838, 358),
+		new Point(848, 330),
+		new Point(860, 301),
+		new Point(875, 221),
+		new Point(889, 139),
+		new Point(923, 77),
+		new Point(971, 73),
+		new Point(1024, 96),
+		new Point(1066, 158),
+		new Point(1092, 221),
+		new Point(1101, 0)
+	];
 
 	let draggingPoint = -1;
 
 	let coaster: Coaster;
-	let v = 1;
-	let x = 0.1;
+	let x = 0.01;
+	let direction = 1;
 
 	onMount(() => {
 		context = canvas.getContext('2d')!;
@@ -29,8 +56,8 @@
 			if (!foundOne) {
 				points.push(new Point(e.clientX, canvas.height - e.clientY));
 				coaster = new CubicCoaster(getCubicSpline(points));
-				v = 1;
-				x = 0.1;
+				x = 0.01;
+				direction = 1;
 			}
 		});
 
@@ -75,6 +102,8 @@
 		let delta = time - lastTime;
 		lastTime = time;
 
+		console.log(points);
+
 		canvas.width = window.innerWidth;
 		canvas.height = window.innerHeight;
 
@@ -85,8 +114,21 @@
 		drawKnots(context, canvas, points, draggingPoint);
 		drawCoasterParticipant(context, x, canvas.height - coaster.getHeight(x));
 
-		x += v * delta * Math.cos(Math.atan(coaster.getSlant(x)));
-		v -= Math.sin(Math.atan(coaster.getSlant(x))) * 0.01;
+		if ((canvas.height * 2) / 3 - coaster.getHeight(x + 0.1) < 0) {
+			direction *= -1;
+			while ((canvas.height * 2) / 3 - coaster.getHeight(x) < 0) {
+				x += direction * 0.1;
+			}
+		}
+
+		let v_prime = (t: number, x: number) => {
+			let v = 2 * Math.sqrt((canvas.height * 2) / 3 - coaster.getHeight(x));
+			let theta = Math.atan(coaster.getSlant(x));
+			return direction * Math.cos(theta) * v;
+		};
+
+		x = rungeKuttaStep(x, 0, 0.1, v_prime);
+		// x = eulersStep(x, 0, 0.1, v_prime);
 
 		if (x < 0) {
 			x += canvas.width;
