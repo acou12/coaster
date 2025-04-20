@@ -8,20 +8,23 @@
 	let context: CanvasRenderingContext2D;
 	let points: Point[] = [
 		new Point(0, 0),
-		new Point(1101, 0),
+		// new Point(1101, 0),
 		new Point(194, 181),
-		new Point(282, 363),
-		new Point(410, 481),
-		new Point(453, 366),
-		new Point(530, 482),
-		new Point(611, 456),
-		new Point(660, 479),
-		new Point(704, 444),
-		new Point(756, 410),
-		new Point(783, 226),
+		new Point(288, 306),
+		new Point(401, 373),
+		new Point(444, 343),
+		new Point(469, 380),
+		new Point(582, 302),
+		new Point(617, 372),
+		new Point(713, 381),
+		new Point(744, 303),
+		new Point(774, 193),
 		new Point(821, 104),
 		new Point(901, 37),
-		new Point(971, 10)
+		new Point(971, 10),
+		new Point(234, 267),
+		new Point(651, 387),
+		new Point(685, 389)
 	];
 
 	let draggingPoint = -1;
@@ -80,8 +83,7 @@
 				draggingPoint = -1;
 			}
 		});
-		// points.push(new Point(window.innerWidth, 0));
-		// points.push(new Point(0, 0));
+		points.push(new Point(window.innerWidth, 0));
 		coaster = new CubicCoaster(getCubicSpline(points));
 		draw(0);
 	});
