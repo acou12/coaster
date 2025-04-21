@@ -17,14 +17,13 @@ export class CubicPiecewise {
 
 	/* find the i such that x[i] <= t <= x[i+1]. */
 	private getIndex(t: number) {
-		if (t < this.x[0] || t > this.x[this.x.length - 1]) {
+		if (t < this.x[0] || t > this.x[this.x.length - 1] || Number.isNaN(t) /* yikes */) {
 			return 0;
 		} else {
 			let i = 0;
-			while (this.x[i] < t) {
+			while (!(this.x[i] <= t && t <= this.x[i + 1])) {
 				i++;
 			}
-			i--;
 			return i;
 		}
 	}
@@ -44,9 +43,20 @@ export class CubicPiecewise {
 		let i = this.getIndex(t);
 		return 3 * Math.pow(t, 2) * this.a[i] + 2 * t * this.b[i] + this.c[i];
 	}
+
+	computeIntegral() {
+		/* this uses simpson's rule; since each component is a cubic, this is actually exact. */
+		let sum = 0;
+		for (let i = 0; i < this.x.length - 1; i++) {
+			let a = this.x[i];
+			let b = this.x[i + 1];
+			sum += ((b - a) / 6) * (this.compute(a) + 4 * this.compute((a + b) / 2) + this.compute(b));
+		}
+		return sum;
+	}
 }
 
-// export const getCubicSpline = (points: Point[]): CubicPiecewise => {
+// export const getCubicSpline = points: Point[]: CubicPiecewise => {
 // 	/* todo */
 // 	points.sort((p1, p2) => p1.x - p2.x);
 

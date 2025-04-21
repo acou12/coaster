@@ -30,6 +30,8 @@
 	let draggingPoint = -1;
 
 	let coaster: Coaster;
+	let area: number;
+	let speed: number;
 	let x = 0.01;
 	let direction = 1;
 
@@ -48,6 +50,7 @@
 			if (!foundOne) {
 				points.push(new Point(e.clientX, canvas.height - e.clientY));
 				coaster = new CubicCoaster(getCubicSpline(points));
+				area = coaster.getArea();
 				x = 0.01;
 				direction = 1;
 			}
@@ -76,6 +79,7 @@
 				}
 
 				coaster = new CubicCoaster(getCubicSpline(points));
+				area = coaster.getArea();
 			}
 		});
 		canvas.addEventListener('mouseup', (e) => {
@@ -85,6 +89,7 @@
 		});
 		points.push(new Point(window.innerWidth, 0));
 		coaster = new CubicCoaster(getCubicSpline(points));
+		area = coaster.getArea();
 		draw(0);
 	});
 
@@ -93,8 +98,6 @@
 	const draw = (time: number) => {
 		let delta = time - lastTime;
 		lastTime = time;
-
-		console.log(points);
 
 		canvas.width = window.innerWidth;
 		canvas.height = window.innerHeight;
@@ -119,6 +122,8 @@
 			return direction * Math.cos(theta) * v;
 		};
 
+		speed = 2 * Math.sqrt((canvas.height * 2) / 3 - coaster.getHeight(x));
+
 		x = rungeKuttaStep(x, 0, 0.1, v_prime);
 		// x = eulersStep(x, 0, 0.1, v_prime);
 
@@ -135,10 +140,35 @@
 
 <canvas bind:this={canvas}></canvas>
 
+<div class="info">
+	<p>
+		<strong class="underline">Total area of your coaster:</strong>
+		{Math.round(area)} square pixels.
+	</p>
+	<p>
+		<strong class="underline">Current coaster speed:</strong>
+		{Math.round(speed)} pixels per second.
+	</p>
+</div>
+
 <style>
 	canvas {
 		position: fixed;
 		left: 0;
 		top: 0;
+	}
+
+	.info {
+		position: fixed;
+		left: 10vw;
+		width: 80vw;
+		top: 10vh;
+		height: 80vh;
+
+		border-radius: 20px;
+		padding: 30px;
+
+		background: rgba(0, 0, 0, 0.5);
+		color: white;
 	}
 </style>

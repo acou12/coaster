@@ -3,6 +3,7 @@ import type { CubicPiecewise } from './methods';
 export interface Coaster {
 	getHeight(x: number): number;
 	getSlant(x: number): number;
+	getArea(): number;
 }
 
 export class CubicCoaster implements Coaster {
@@ -14,5 +15,9 @@ export class CubicCoaster implements Coaster {
 
 	getHeight(x: number): number {
 		return this.spline.compute(x);
+	}
+
+	getArea(): number {
+		return this.spline.computeIntegral();
 	}
 }
