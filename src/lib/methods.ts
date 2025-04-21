@@ -44,6 +44,22 @@ export class CubicPiecewise {
 		return 3 * Math.pow(t, 2) * this.a[i] + 2 * t * this.b[i] + this.c[i];
 	}
 
+	computeSecondDerivative(t: number): number {
+		if (this.x.length < 2 || t < this.x[0] || t > this.x[this.x.length - 1]) {
+			return 0;
+		}
+		let i = this.getIndex(t);
+		return 6 * t * this.a[i] + 2 * this.b[i];
+	}
+
+	getMaxSecondDerivative(): number {
+		let max = 0;
+		for (let i = 0; i < this.x.length; i++) {
+			max = Math.max(this.computeSecondDerivative(this.x[i]), max);
+		}
+		return max;
+	}
+
 	computeIntegral() {
 		/* this uses simpson's rule; since each component is a cubic, this is actually exact. */
 		let sum = 0;

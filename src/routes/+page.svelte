@@ -28,6 +28,8 @@
 		new Point(685, 389)
 	];
 
+	let mousePos = { x: 0, y: 0 };
+
 	let draggingPoint = -1;
 
 	let draggingCamera = false;
@@ -37,10 +39,17 @@
 	let coaster: Coaster;
 	let area: number;
 	let speed: number;
+	let maxAcceleration: number;
 	let x = 0.01;
 	let direction = 1;
 
 	let camera: Camera;
+
+	const updateCoaster = () => {
+		coaster = new CubicCoaster(getCubicSpline(points));
+		area = coaster.getArea();
+		maxAcceleration = coaster.getMaxAcceleration();
+	};
 
 	onMount(() => {
 		context = canvas.getContext('2d')!;
@@ -51,6 +60,11 @@
 				draggingCamera = true;
 			} else if (e.key === 'Escape') {
 				infoToggled = !infoToggled;
+			} else if (e.key === 'Backspace') {
+				points = [new Point(0, 0), new Point(window.innerWidth, 0)];
+				updateCoaster();
+			} else if (e.key === 'p') {
+				x = mousePos.x;
 			}
 		});
 
@@ -74,14 +88,15 @@
 			}
 			if (!foundOne) {
 				points.push(new Point(rx, ry));
-				coaster = new CubicCoaster(getCubicSpline(points));
-				area = coaster.getArea();
-				x = 0.01;
-				direction = 1;
+				updateCoaster();
 			}
 		});
 
 		canvas.addEventListener('mousemove', (e) => {
+			mousePos = {
+				x: e.clientX,
+				y: e.clientY
+			};
 			if (draggingPoint !== -1) {
 				points[draggingPoint].x = camera.inverseTransformX(e.clientX);
 				points[draggingPoint].y = camera.inverseTransformY(e.clientY);
@@ -103,8 +118,7 @@
 					draggingPoint -= 1;
 				}
 
-				coaster = new CubicCoaster(getCubicSpline(points));
-				area = coaster.getArea();
+				updateCoaster();
 			}
 			if (draggingCamera) {
 				console.log('DRAGGING');
@@ -118,8 +132,7 @@
 			}
 		});
 		points.push(new Point(window.innerWidth, 0));
-		coaster = new CubicCoaster(getCubicSpline(points));
-		area = coaster.getArea();
+		updateCoaster();
 		draw(0);
 	});
 
@@ -180,6 +193,10 @@
 		<p>
 			<strong class="underline">Total area of your coaster:</strong>
 			{Math.round(area)} square pixels.
+		</p>
+		<p>
+			<strong class="underline">Maximum acceleration felt by your coaster riders:</strong>
+			{Math.round(maxAcceleration * 100) / 100} pixels per square second.
 		</p>
 		<p>
 			<strong class="underline">Current coaster speed:</strong>

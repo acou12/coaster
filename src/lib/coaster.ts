@@ -4,6 +4,7 @@ export interface Coaster {
 	getHeight(x: number): number;
 	getSlant(x: number): number;
 	getArea(): number;
+	getMaxAcceleration(): number;
 }
 
 export class CubicCoaster implements Coaster {
@@ -19,5 +20,9 @@ export class CubicCoaster implements Coaster {
 
 	getArea(): number {
 		return this.spline.computeIntegral();
+	}
+
+	getMaxAcceleration(): number {
+		return this.spline.getMaxSecondDerivative();
 	}
 }
