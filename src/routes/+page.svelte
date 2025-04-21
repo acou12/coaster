@@ -32,6 +32,8 @@
 
 	let draggingCamera = false;
 
+	let infoToggled = false;
+
 	let coaster: Coaster;
 	let area: number;
 	let speed: number;
@@ -47,6 +49,8 @@
 		window.addEventListener('keydown', (e) => {
 			if (e.key === ' ') {
 				draggingCamera = true;
+			} else if (e.key === 'Escape') {
+				infoToggled = !infoToggled;
 			}
 		});
 
@@ -171,16 +175,18 @@
 
 <canvas bind:this={canvas}></canvas>
 
-<div class="info">
-	<p>
-		<strong class="underline">Total area of your coaster:</strong>
-		{Math.round(area)} square pixels.
-	</p>
-	<p>
-		<strong class="underline">Current coaster speed:</strong>
-		{Math.round(speed)} pixels per second.
-	</p>
-</div>
+{#if infoToggled}
+	<div class="info">
+		<p>
+			<strong class="underline">Total area of your coaster:</strong>
+			{Math.round(area)} square pixels.
+		</p>
+		<p>
+			<strong class="underline">Current coaster speed:</strong>
+			{Math.round(speed)} pixels per second.
+		</p>
+	</div>
+{/if}
 
 <style>
 	canvas {
