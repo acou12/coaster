@@ -1,10 +1,17 @@
 <script lang="ts">
 	import { RenderingContext, StandardCamera, type Camera } from '$lib/camera';
 	import { CubicCoaster, type Coaster } from '$lib/coaster';
-	import { eulersStep, getCubicSpline, rungeKuttaStep } from '$lib/methods';
+	import { CubicPiecewise, eulersStep, getCubicSpline, rungeKuttaStep } from '$lib/methods';
 	import { Point } from '$lib/point';
-	import { drawCoaster, drawCoasterParticipant, drawKnots } from '$lib/visuals';
+	import {
+		drawCoaster,
+		drawCoasterParticipant,
+		drawCubic,
+		drawKnots,
+		drawForces
+	} from '$lib/visuals';
 	import { onMount } from 'svelte';
+
 	let canvas: HTMLCanvasElement;
 	let context: CanvasRenderingContext2D;
 	let points: Point[] = [
@@ -36,7 +43,7 @@
 
 	let infoToggled = false;
 
-	let coaster: Coaster;
+	let coaster: CubicPiecewise;
 	let area: number;
 	let speed: number;
 	let maxAcceleration: number;
@@ -45,10 +52,15 @@
 
 	let camera: Camera;
 
+	let debug = {
+		components: false,
+		forces: false
+	};
+
 	const updateCoaster = () => {
-		coaster = new CubicCoaster(getCubicSpline(points));
-		area = coaster.getArea();
-		maxAcceleration = coaster.getMaxAcceleration();
+		coaster = getCubicSpline(points);
+		area = coaster.computeIntegral();
+		maxAcceleration = coaster.getMaxSecondDerivative();
 	};
 
 	onMount(() => {
@@ -148,26 +160,20 @@
 		context.fillStyle = 'skyblue';
 		context.fillRect(0, 0, canvas.width, canvas.height);
 
-		let rc = new RenderingContext(camera, context, canvas);
-
-		drawCoaster(rc, /* precision = */ 10, coaster);
-		drawKnots(rc, points, draggingPoint);
-		drawCoasterParticipant(rc, x, coaster.getHeight(x));
-
-		if ((canvas.height * 2) / 3 - coaster.getHeight(x + 0.1) < 0) {
+		if ((canvas.height * 2) / 3 - coaster.compute(x + 0.1) < 0) {
 			direction *= -1;
-			while ((canvas.height * 2) / 3 - coaster.getHeight(x) < 0) {
+			while ((canvas.height * 2) / 3 - coaster.compute(x) < 0) {
 				x += direction * 0.1;
 			}
 		}
 
 		let v_prime = (t: number, x: number) => {
-			let v = 2 * Math.sqrt((canvas.height * 2) / 3 - coaster.getHeight(x));
-			let theta = Math.atan(coaster.getSlant(x));
+			let v = 2 * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(x));
+			let theta = Math.atan(coaster.computeDerivative(x));
 			return direction * Math.cos(theta) * v;
 		};
 
-		speed = 2 * Math.sqrt((canvas.height * 2) / 3 - coaster.getHeight(x));
+		speed = 2 * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(x));
 
 		x = rungeKuttaStep(x, 0, 0.1, v_prime);
 		// x = eulersStep(x, 0, 0.1, v_prime);
@@ -182,6 +188,18 @@
 			x -= max - min;
 		}
 
+		let rc = new RenderingContext(camera, context, canvas);
+
+		drawCoaster(rc, /* precision = */ 10, coaster);
+		if (debug.components) {
+			drawCubic(rc, /* precision = */ 10, coaster, x);
+		}
+		drawKnots(rc, points, draggingPoint);
+		if (debug.forces) {
+			drawForces(rc, coaster.computeDerivative(x), x, coaster.compute(x));
+		}
+		drawCoasterParticipant(rc, x, coaster.compute(x));
+
 		requestAnimationFrame(draw);
 	};
 </script>
@@ -195,12 +213,21 @@
 			{Math.round(area)} square pixels.
 		</p>
 		<p>
-			<strong class="underline">Maximum acceleration felt by your coaster riders:</strong>
+			<strong class="underline">Maximum acceleration:</strong>
 			{Math.round(maxAcceleration * 100) / 100} pixels per square second.
 		</p>
 		<p>
 			<strong class="underline">Current coaster speed:</strong>
 			{Math.round(speed)} pixels per second.
+		</p>
+		<p>
+			<button
+				class:button-selected={debug.components}
+				on:click={() => (debug.components = !debug.components)}>Toggle component drawing</button
+			>
+			<button class:button-selected={debug.forces} on:click={() => (debug.forces = !debug.forces)}
+				>Toggle forces</button
+			>
 		</p>
 	</div>
 {/if}
@@ -224,5 +251,20 @@
 
 		background: rgba(0, 0, 0, 0.5);
 		color: white;
+	}
+
+	button {
+		border: solid white 1px;
+		padding: 3px;
+		border-radius: 3px;
+	}
+
+	h2 {
+		font-size: large;
+	}
+
+	.button-selected {
+		background-color: white;
+		color: black;
 	}
 </style>

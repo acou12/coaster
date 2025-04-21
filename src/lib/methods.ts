@@ -16,7 +16,7 @@ export class CubicPiecewise {
 	) {}
 
 	/* find the i such that x[i] <= t <= x[i+1]. */
-	private getIndex(t: number) {
+	getIndex(t: number) {
 		if (t < this.x[0] || t > this.x[this.x.length - 1] || Number.isNaN(t) /* yikes */) {
 			return 0;
 		} else {
@@ -33,6 +33,10 @@ export class CubicPiecewise {
 			return 0;
 		}
 		let i = this.getIndex(t);
+		return Math.pow(t, 3) * this.a[i] + Math.pow(t, 2) * this.b[i] + t * this.c[i] + this.d[i];
+	}
+
+	computeComponent(t: number, i: number) {
 		return Math.pow(t, 3) * this.a[i] + Math.pow(t, 2) * this.b[i] + t * this.c[i] + this.d[i];
 	}
 

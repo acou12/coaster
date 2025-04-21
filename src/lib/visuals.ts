@@ -1,8 +1,8 @@
 import type { RenderingContext } from './camera';
-import type { Coaster } from './coaster';
-import type { Point } from './point';
+import type { CubicPiecewise } from './methods';
+import { Point } from './point';
 
-export const drawCoaster = (rc: RenderingContext, precision: number, coaster: Coaster) => {
+export const drawCoaster = (rc: RenderingContext, precision: number, coaster: CubicPiecewise) => {
 	/* draw the scaffolds */
 	for (let x = -rc.canvas.width * 5; x < rc.canvas.width * 4; x += precision) {
 		rc.context.beginPath();
@@ -11,7 +11,7 @@ export const drawCoaster = (rc: RenderingContext, precision: number, coaster: Co
 		rc.context.lineWidth = 5;
 
 		rc.context.moveTo(rc.camera.transformX(x), rc.camera.transformY(0));
-		rc.context.lineTo(rc.camera.transformX(x), rc.camera.transformY(coaster.getHeight(x)));
+		rc.context.lineTo(rc.camera.transformX(x), rc.camera.transformY(coaster.compute(x)));
 
 		rc.context.stroke();
 	}
@@ -23,10 +23,10 @@ export const drawCoaster = (rc: RenderingContext, precision: number, coaster: Co
 		rc.context.strokeStyle = '#808080';
 		rc.context.lineWidth = 5;
 
-		rc.context.moveTo(rc.camera.transformX(x), rc.camera.transformY(coaster.getHeight(x)));
+		rc.context.moveTo(rc.camera.transformX(x), rc.camera.transformY(coaster.compute(x)));
 		rc.context.lineTo(
 			rc.camera.transformX(x + precision),
-			rc.camera.transformY(coaster.getHeight(x + precision))
+			rc.camera.transformY(coaster.compute(x + precision))
 		);
 
 		rc.context.stroke();
@@ -54,4 +54,73 @@ export const drawKnots = (rc: RenderingContext, points: Point[], draggingPoint: 
 		);
 		rc.context.fill();
 	}
+};
+
+/* debug */
+
+export const drawCubic = (
+	rc: RenderingContext,
+	precision: number,
+	coaster: CubicPiecewise,
+	x: number
+) => {
+	let i = coaster.getIndex(x);
+	for (let x = -rc.canvas.width * 5; x < rc.canvas.width * 4; x += precision) {
+		rc.context.beginPath();
+
+		rc.context.strokeStyle = '#c44cfc';
+		rc.context.lineWidth = 5;
+
+		rc.context.moveTo(
+			rc.camera.transformX(x),
+			rc.camera.transformY(coaster.computeComponent(x, i))
+		);
+		rc.context.lineTo(
+			rc.camera.transformX(x + precision),
+			rc.camera.transformY(coaster.computeComponent(x + precision, i))
+		);
+
+		rc.context.stroke();
+	}
+};
+
+export const drawArrow = (rc: RenderingContext, p1: Point, p2: Point) => {
+	rc.context.beginPath();
+
+	rc.context.moveTo(rc.camera.transformX(p1.x), rc.camera.transformY(p1.y));
+	rc.context.lineTo(rc.camera.transformX(p2.x), rc.camera.transformY(p2.y));
+
+	let angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+	let len = Math.sqrt(Math.pow(p2.y - p1.y, 2) + Math.pow(p2.x - p1.x, 2));
+
+	rc.context.moveTo(rc.camera.transformX(p2.x), rc.camera.transformY(p2.y));
+	rc.context.lineTo(
+		rc.camera.transformX(p2.x + (Math.cos(angle + (Math.PI * 4) / 5) * len) / 3),
+		rc.camera.transformY(p2.y + (Math.sin(angle + (Math.PI * 4) / 5) * len) / 3)
+	);
+
+	rc.context.moveTo(rc.camera.transformX(p2.x), rc.camera.transformY(p2.y));
+	rc.context.lineTo(
+		rc.camera.transformX(p2.x + (Math.cos(angle - (Math.PI * 4) / 5) * len) / 3),
+		rc.camera.transformY(p2.y + (Math.sin(angle - (Math.PI * 4) / 5) * len) / 3)
+	);
+
+	rc.context.stroke();
+};
+
+export const drawForces = (rc: RenderingContext, slope: number, x: number, y: number) => {
+	rc.context.lineWidth = 5;
+
+	let theta = Math.atan(slope);
+	let dx = -Math.sin(theta) * 60;
+	let dy = Math.cos(theta) * 60;
+
+	rc.context.strokeStyle = '#4c66fc';
+	drawArrow(rc, new Point(x, y), new Point(x + Math.cos(theta) * dx, y + Math.sin(theta) * dx));
+	rc.context.strokeStyle = '#fc9b4c';
+	drawArrow(
+		rc,
+		new Point(x, y),
+		new Point(x + Math.cos(theta - Math.PI / 2) * dy, y + Math.sin(theta - Math.PI / 2) * dy)
+	);
 };
