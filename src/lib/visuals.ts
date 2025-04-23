@@ -52,6 +52,7 @@ export const drawCoasterParticipant = (
 
 	rc.context.translate(rc.camera.transformX(-x), rc.camera.transformY(-y));
 	rc.context.fill();
+	rc.context.resetTransform();
 };
 
 export const drawKnots = (rc: RenderingContext, points: Point[], draggingPoint: number) => {

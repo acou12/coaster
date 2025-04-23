@@ -46,10 +46,11 @@
 
 	let coaster: CubicPiecewise;
 	let area: number;
-	let speed: number;
 	let maxAcceleration: number;
+	let displaySpeed: number;
+
+	let speed: number;
 	let x = 0.01;
-	let direction = 1;
 
 	let camera: Camera;
 
@@ -59,10 +60,14 @@
 		follow: false
 	};
 
+	const feetPerPixels = () => {
+		return 100 / window.innerWidth;
+	};
+
 	const updateCoaster = () => {
 		coaster = getCubicSpline(points);
-		area = (coaster.computeIntegral() / (window.innerWidth * window.innerWidth)) * 100 * 100;
-		maxAcceleration = coaster.getMaxSecondDerivative();
+		area = coaster.computeIntegral() * feetPerPixels();
+		maxAcceleration = coaster.getMaxSecondDerivative() * feetPerPixels();
 	};
 
 	onMount(() => {
@@ -162,22 +167,17 @@
 		context.fillStyle = 'skyblue';
 		context.fillRect(0, 0, canvas.width, canvas.height);
 
-		if ((canvas.height * 2) / 3 - coaster.compute(x + 0.1) < 0) {
-			direction *= -1;
-			while ((canvas.height * 2) / 3 - coaster.compute(x) < 0) {
-				x += direction * 0.1;
-			}
-		}
+		let factor = 30;
 
 		let v_prime = (t: number, x: number) => {
-			let v = 2 * 1.2 * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(x));
+			let v = factor * Math.sqrt(Math.max(0, (canvas.height * 2) / 3 - coaster.compute(x)));
 			let theta = Math.atan(coaster.computeDerivative(x));
-			return direction * Math.cos(theta) * v;
+			return Math.cos(theta) * v;
 		};
 
-		speed = 2 * 1.2 * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(x));
+		speed = factor * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(x));
 
-		x = rungeKuttaStep(x, 0, 0.1, v_prime);
+		x = rungeKuttaStep(x, 0, delta / 1000, v_prime);
 		// x = eulersStep(x, 0, 0.1, v_prime);
 
 		let min = points.map((p) => p.x).reduce((acc, x) => Math.min(acc, x));
@@ -201,10 +201,12 @@
 			drawCubic(rc, /* precision = */ 10, coaster, x);
 		}
 		drawKnots(rc, points, draggingPoint);
+		drawCoasterParticipant(rc, x, coaster);
 		if (debug.forces) {
 			drawForces(rc, coaster.computeDerivative(x), x, coaster.compute(x));
 		}
-		drawCoasterParticipant(rc, x, coaster);
+
+		displaySpeed = (speed * feetPerPixels()) / 1.467 /* mph conversion */;
 
 		requestAnimationFrame(draw);
 	};
@@ -216,15 +218,15 @@
 	<div class="info">
 		<p>
 			<strong class="underline">Total area of your coaster:</strong>
-			{Math.round(area)} square pixels.
+			{Math.round(area)} square feet.
 		</p>
 		<p>
 			<strong class="underline">Maximum acceleration:</strong>
-			{Math.round(maxAcceleration * 100) / 100} pixels per square second.
+			{Math.round(maxAcceleration * 100) / 100} feet per square second.
 		</p>
 		<p>
 			<strong class="underline">Current coaster speed:</strong>
-			{Math.round(speed)} pixels per second.
+			{Math.round(displaySpeed)} miles per hour.
 		</p>
 		<p>
 			<button
