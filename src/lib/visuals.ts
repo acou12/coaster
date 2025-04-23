@@ -33,10 +33,24 @@ export const drawCoaster = (rc: RenderingContext, precision: number, coaster: Cu
 	}
 };
 
-export const drawCoasterParticipant = (rc: RenderingContext, x: number, y: number) => {
+export const drawCoasterParticipant = (
+	rc: RenderingContext,
+	x: number,
+	coaster: CubicPiecewise
+) => {
 	rc.context.beginPath();
 	rc.context.fillStyle = 'black';
-	rc.context.arc(rc.camera.transformX(x), rc.camera.transformY(y), 10, 0, 2 * Math.PI);
+	// rc.context.arc(rc.camera.transformX(x), rc.camera.transformY(y), 10, 0, 2 * Math.PI);
+	let y = coaster.compute(x);
+	let len = 20;
+	rc.context.translate(rc.camera.transformX(x), rc.camera.transformY(y));
+	rc.context.rotate(-Math.atan(coaster.computeDerivative(x)));
+
+	rc.context.fillRect(-len, -len, 2 * len, len);
+	// rc.context.arc(-len, 0, 10, 0, 2 * Math.PI);
+	// rc.context.arc(len, 0, 10, 0, 2 * Math.PI);
+
+	rc.context.translate(rc.camera.transformX(-x), rc.camera.transformY(-y));
 	rc.context.fill();
 };
 

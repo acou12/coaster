@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { disableScrollHandling } from '$app/navigation';
 	import { RenderingContext, StandardCamera, type Camera } from '$lib/camera';
 	import { CubicCoaster, type Coaster } from '$lib/coaster';
 	import { CubicPiecewise, eulersStep, getCubicSpline, rungeKuttaStep } from '$lib/methods';
@@ -54,12 +55,13 @@
 
 	let debug = {
 		components: false,
-		forces: false
+		forces: false,
+		follow: false
 	};
 
 	const updateCoaster = () => {
 		coaster = getCubicSpline(points);
-		area = coaster.computeIntegral();
+		area = (coaster.computeIntegral() / (window.innerWidth * window.innerWidth)) * 100 * 100;
 		maxAcceleration = coaster.getMaxSecondDerivative();
 	};
 
@@ -168,12 +170,12 @@
 		}
 
 		let v_prime = (t: number, x: number) => {
-			let v = 2 * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(x));
+			let v = 2 * 1.2 * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(x));
 			let theta = Math.atan(coaster.computeDerivative(x));
 			return direction * Math.cos(theta) * v;
 		};
 
-		speed = 2 * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(x));
+		speed = 2 * 1.2 * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(x));
 
 		x = rungeKuttaStep(x, 0, 0.1, v_prime);
 		// x = eulersStep(x, 0, 0.1, v_prime);
@@ -188,6 +190,10 @@
 			x -= max - min;
 		}
 
+		if (debug.follow) {
+			camera.updateTopLeft(new Point(x - canvas.width / 2, camera.getTopLeft().y));
+		}
+
 		let rc = new RenderingContext(camera, context, canvas);
 
 		drawCoaster(rc, /* precision = */ 10, coaster);
@@ -198,7 +204,7 @@
 		if (debug.forces) {
 			drawForces(rc, coaster.computeDerivative(x), x, coaster.compute(x));
 		}
-		drawCoasterParticipant(rc, x, coaster.compute(x));
+		drawCoasterParticipant(rc, x, coaster);
 
 		requestAnimationFrame(draw);
 	};
@@ -227,6 +233,9 @@
 			>
 			<button class:button-selected={debug.forces} on:click={() => (debug.forces = !debug.forces)}
 				>Toggle forces</button
+			>
+			<button class:button-selected={debug.follow} on:click={() => (debug.follow = !debug.follow)}
+				>Toggle follow</button
 			>
 		</p>
 	</div>
@@ -257,10 +266,6 @@
 		border: solid white 1px;
 		padding: 3px;
 		border-radius: 3px;
-	}
-
-	h2 {
-		font-size: large;
 	}
 
 	.button-selected {
