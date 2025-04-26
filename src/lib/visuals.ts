@@ -1,10 +1,10 @@
 import type { RenderingContext } from './camera';
-import type { CubicPiecewise } from './methods';
+import { getAllIntersections, type CubicPiecewise } from './methods';
 import { Point } from './point';
 
 export const drawCoaster = (rc: RenderingContext, precision: number, coaster: CubicPiecewise) => {
 	/* draw the scaffolds */
-	for (let x = -rc.canvas.width * 5; x < rc.canvas.width * 4; x += precision) {
+	for (let x = coaster.x[0]; x < coaster.x[coaster.x.length - 1]; x += precision * 2) {
 		rc.context.beginPath();
 
 		rc.context.strokeStyle = '#ffe1a3';
@@ -16,8 +16,24 @@ export const drawCoaster = (rc: RenderingContext, precision: number, coaster: Cu
 		rc.context.stroke();
 	}
 
+	for (let y = 0; y < rc.canvas.height; y += precision * 2) {
+		// let y = window.innerHeight / 2;
+		let intersections = getAllIntersections(coaster, y);
+		// console.log(intersections);
+		// console.log(intersections.map((x) => coaster.compute(x)));
+		for (let i = 0; i < intersections.length - 1; i++) {
+			let [xl, xh] = [intersections[i], intersections[i + 1]];
+			if (coaster.computeDerivative(xl) > 0) {
+				rc.context.beginPath();
+				rc.context.moveTo(rc.camera.transformX(xl), rc.camera.transformY(coaster.compute(xl)));
+				rc.context.lineTo(rc.camera.transformX(xh), rc.camera.transformY(coaster.compute(xh)));
+				rc.context.stroke();
+			}
+		}
+	}
+
 	/* draw the rail */
-	for (let x = -rc.canvas.width * 5; x < rc.canvas.width * 4; x += precision) {
+	for (let x = coaster.x[0]; x < coaster.x[coaster.x.length - 1]; x += precision) {
 		rc.context.beginPath();
 
 		rc.context.strokeStyle = '#808080';

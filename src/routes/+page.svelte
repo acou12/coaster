@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { disableScrollHandling } from '$app/navigation';
 	import { RenderingContext, StandardCamera, type Camera } from '$lib/camera';
 	import { CubicCoaster, type Coaster } from '$lib/coaster';
-	import { CubicPiecewise, eulersStep, getCubicSpline, rungeKuttaStep } from '$lib/methods';
+	import { CubicPiecewise, getCubicSpline, rungeKuttaStep } from '$lib/methods';
 	import { Point } from '$lib/point';
 	import {
 		drawCoaster,
@@ -15,26 +14,7 @@
 
 	let canvas: HTMLCanvasElement;
 	let context: CanvasRenderingContext2D;
-	let points: Point[] = [
-		new Point(0, 0),
-		// new Point(1101, 0),
-		new Point(194, 181),
-		new Point(288, 306),
-		new Point(401, 373),
-		new Point(444, 343),
-		new Point(469, 380),
-		new Point(582, 302),
-		new Point(617, 372),
-		new Point(713, 381),
-		new Point(744, 303),
-		new Point(774, 193),
-		new Point(821, 104),
-		new Point(901, 37),
-		new Point(971, 10),
-		new Point(234, 267),
-		new Point(651, 387),
-		new Point(685, 389)
-	];
+	let points: Point[] = [new Point(0, 0)];
 
 	let mousePos = { x: 0, y: 0 };
 

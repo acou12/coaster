@@ -76,30 +76,6 @@ export class CubicPiecewise {
 	}
 }
 
-// export const getCubicSpline = points: Point[]: CubicPiecewise => {
-// 	/* todo */
-// 	points.sort((p1, p2) => p1.x - p2.x);
-
-// 	const x = points.map((p) => p.x);
-// 	const a = Array(points.length - 1).fill(0);
-// 	const b = Array(points.length - 1).fill(0);
-// 	const c = Array(points.length - 1).fill(0);
-// 	const d = Array(points.length - 1).fill(0);
-
-// 	/* temporarily returns a linear spline */
-
-// 	for (let i = 0; i < points.length - 1; i++) {
-// 		let first = points[i];
-// 		let second = points[i + 1];
-// 		let slope = (second.y - first.y) / (second.x - first.x);
-// 		/* first.y = slope * first.x + yIntercept, so */
-// 		let yIntercept = first.y - slope * first.x;
-// 		c[i] = slope;
-// 		d[i] = yIntercept;
-// 	}
-
-// 	return new CubicPiecewise(x, a, b, c, d);
-// };
 export const getCubicSpline = (points: Point[]): CubicPiecewise => {
 	const pts = [...points].sort((p1, p2) => p1.x - p2.x);
 	const N = pts.length;
@@ -190,4 +166,122 @@ export const eulersStep = (
 
 export const approximateDerivate = (x: number, h: number, f: (x: number) => number) => {
 	// TODO!
+};
+
+/**
+ * Given a cubic piecewise function f(x) and a constant c,
+ * returns every x for which f(x) = c.
+ */
+export const getAllIntersections = (spline: CubicPiecewise, c: number): number[] => {
+	let intersections = [];
+	for (let i = 0; i < spline.x.length - 1; i++) {
+		intersections.push(
+			...getBoundedCubicRoot(
+				spline.a[i],
+				spline.b[i],
+				spline.c[i],
+				spline.d[i] - c,
+				spline.x[i],
+				spline.x[i + 1]
+			)
+		);
+	}
+	return intersections;
+};
+
+/**
+ * Returns a list of roots of the cubic f(x) = ax^3 + bx^2 + cx + d
+ * that lie in the interval [l, h].
+ */
+export const getBoundedCubicRoot = (
+	a: number,
+	b: number,
+	c: number,
+	d: number,
+	l: number,
+	h: number
+): number[] => {
+	/* We find the roots by running the bisection method on subintervals of [l, h].
+	   The way we find these intervals is by finding the critical points of the cubic.
+	   The zeroes must lie between two critical points which have opposite signs. */
+
+	/* find the roots of f'(x) */
+	let criticalPoints = [];
+
+	let insideSquareRoot = Math.pow(2 * b, 2) - 12 * a * c;
+
+	if (insideSquareRoot === 0) {
+		criticalPoints.push((-2 * b) / (6 * a));
+	} else if (insideSquareRoot > 0) {
+		criticalPoints.push((-2 * b + Math.sqrt(insideSquareRoot)) / (6 * a));
+		criticalPoints.push((-2 * b - Math.sqrt(insideSquareRoot)) / (6 * a));
+	}
+
+	/* these are the borders of the critical intervals. */
+	let borders = [l, ...criticalPoints.filter((x) => l < x && x < h), h];
+	// console.log(borders);
+
+	let roots = [];
+
+	for (let i = 0; i < borders.length - 1; i++) {
+		let bl = borders[i];
+		let bh = borders[i + 1];
+		/* if the interval's border's signs are different, there must be a 
+		   root here. use bisection to approximate it. */
+		if (
+			sign(a * Math.pow(bl, 3) + b * Math.pow(bl, 2) + c * bl + d) !==
+			sign(a * Math.pow(bh, 3) + b * Math.pow(bh, 2) + c * bh + d)
+		) {
+			roots.push(
+				bisection((x) => a * Math.pow(x, 3) + b * Math.pow(x, 2) + c * x + d, 0.001, bl, bh)
+			);
+		}
+	}
+
+	return roots;
+};
+
+/**
+ * Returns an approximation of a root of f between l_i and h_i.
+ *
+ * More precisely, returns a value l_i <= x <= h_i such that |f(x) - f(x_0)| <= epsilon, where f(x_0) = 0.
+ */
+export const bisection = (
+	f: (x: number) => number,
+	epsilon: number,
+	l_i: number,
+	h_i: number
+): number => {
+	let l = l_i;
+	let h = h_i;
+	let m = (l + h) / 2;
+	while (h - l > epsilon) {
+		if (sign(f(m)) === Sign.ZERO) {
+			return m;
+		} else {
+			if (sign(f(m)) === sign(f(l))) {
+				l = m;
+			} else {
+				h = m;
+			}
+		}
+		m = (l + h) / 2;
+	}
+	return m;
+};
+
+enum Sign {
+	POSITIVE,
+	ZERO,
+	NEGATIVE
+}
+
+export const sign = (x: number): Sign => {
+	if (x < 0) {
+		return Sign.NEGATIVE;
+	} else if (x > 0) {
+		return Sign.POSITIVE;
+	} else {
+		return Sign.ZERO;
+	}
 };
