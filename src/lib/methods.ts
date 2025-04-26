@@ -187,3 +187,7 @@ export const eulersStep = (
 ) => {
 	return x + h * f(t, x);
 };
+
+export const approximateDerivate = (x: number, h: number, f: (x: number) => number) => {
+	// TODO!
+};
