@@ -165,7 +165,9 @@ export const eulersStep = (
 };
 
 export const approximateDerivate = (x: number, h: number, f: (x: number) => number) => {
-	// TODO!
+
+	// returns the centered difference
+	return (f(x + h) - f(x - h)) / (2 * h)
 };
 
 /**
