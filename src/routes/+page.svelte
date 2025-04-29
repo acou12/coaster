@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { RenderingContext, StandardCamera, type Camera } from '$lib/camera';
 	import { CubicCoaster, type Coaster } from '$lib/coaster';
+	import { test } from '$lib/linalg';
 	import {
 		approximateDerivate,
 		CubicPiecewise,
@@ -19,7 +20,7 @@
 
 	let canvas: HTMLCanvasElement;
 	let context: CanvasRenderingContext2D;
-	let points: Point[] = [new Point(0, 0)];
+	let points: Point[] = [];
 
 	let mousePos = { x: 0, y: 0 };
 
@@ -54,8 +55,10 @@
 	};
 
 	onMount(() => {
+		test();
 		context = canvas.getContext('2d')!;
 		camera = new StandardCamera(canvas);
+		camera.updateTopLeft(new Point(0, (window.innerHeight * 4) / 5));
 
 		window.addEventListener('keydown', (e) => {
 			if (e.key === 'Shift') {
@@ -65,6 +68,10 @@
 				updateCoaster();
 			} else if (e.key === 'p') {
 				x = camera.inverseTransformX(mousePos.x);
+			} else if (e.key === '+') {
+				camera.updateZoom(camera.getZoom() * 1.1);
+			} else if (e.key === '-') {
+				camera.updateZoom(camera.getZoom() / 1.1);
 			}
 		});
 
@@ -123,7 +130,9 @@
 			if (draggingCamera) {
 				console.log('DRAGGING');
 				let p = camera.getTopLeft();
-				camera.updateTopLeft(new Point(p.x - e.movementX, p.y + e.movementY));
+				camera.updateTopLeft(
+					new Point(p.x + e.movementX / camera.getZoom(), p.y + e.movementY / camera.getZoom())
+				);
 			}
 		});
 		canvas.addEventListener('mouseup', (e) => {
@@ -131,7 +140,8 @@
 				draggingPoint = -1;
 			}
 		});
-		points.push(new Point(canvas.clientWidth, 0));
+		points.push(new Point(canvas.clientWidth * 0.1, 0));
+		points.push(new Point(canvas.clientWidth * 0.9, 0));
 		updateCoaster();
 		draw(0);
 	});
@@ -194,7 +204,7 @@
 		}
 
 		if (debug.follow) {
-			camera.updateTopLeft(new Point(x - canvas.width / 2, camera.getTopLeft().y));
+			camera.updateTopLeft(new Point(-x + canvas.width / 2, camera.getTopLeft().y));
 		}
 
 		let rc = new RenderingContext(camera, context, canvas);
@@ -257,6 +267,9 @@
 		<li>- Clear tracks: <code>Backspace/Delete</code></li>
 		<li>- Re-place coaster: <code>P</code></li>
 		<li>- Pan camera: hold <code>Shift</code></li>
+		THESE TWO ARE REALLY BUGGY:
+		<li>- Zoom camera out: <code>-</code></li>
+		<li>- Zoom camera in: <code>+</code></li>
 	</ul>
 </div>
 

@@ -1,3 +1,4 @@
+import { flip, HomogeneousCoordinates, scale, transform } from './linalg';
 import { Point } from './point';
 
 export interface Camera {
@@ -9,41 +10,52 @@ export interface Camera {
 	inverseTransformY(y: number): number;
 	getTopLeft(): Point;
 	updateTopLeft(point: Point): void;
+	getZoom(): number;
+	updateZoom(z: number): void;
 }
 
 export class StandardCamera implements Camera {
 	topLeftX: number;
 	topLeftY: number;
 	zoom: number;
+	coordinates: HomogeneousCoordinates;
 
 	constructor(private canvas: HTMLCanvasElement) {
 		this.topLeftX = 0;
 		this.topLeftY = 0;
 		this.zoom = 1;
+		this.coordinates = new HomogeneousCoordinates([]);
+		this.updateCoordinates();
+	}
+
+	private updateCoordinates() {
+		this.coordinates = scale(this.zoom)
+			.multiply(transform(this.topLeftX, this.topLeftY))
+			.multiply(flip());
 	}
 
 	transformPoint(point: Point): Point {
-		return new Point(this.transformX(point.x), this.transformY(point.y));
+		return this.coordinates.transformPoint(point);
 	}
 
 	transformX(x: number): number {
-		return x - this.topLeftX;
+		return this.coordinates.transformPoint(new Point(x, 0)).x;
 	}
 
 	transformY(y: number): number {
-		return this.canvas.height - (y - this.topLeftY);
+		return this.coordinates.transformPoint(new Point(0, y)).y;
 	}
 
 	inverseTransformPoint(point: Point): Point {
-		return new Point(this.inverseTransformX(point.x), this.inverseTransformY(point.y));
+		return this.coordinates.inverseTransform(point);
 	}
 
 	inverseTransformX(x: number): number {
-		return x + this.topLeftX;
+		return this.coordinates.inverseTransform(new Point(x, 0)).x;
 	}
 
 	inverseTransformY(y: number): number {
-		return this.canvas.height - y + this.topLeftY;
+		return this.coordinates.inverseTransform(new Point(0, y)).y;
 	}
 
 	getTopLeft(): Point {
@@ -53,6 +65,16 @@ export class StandardCamera implements Camera {
 	updateTopLeft(point: Point): void {
 		this.topLeftX = point.x;
 		this.topLeftY = point.y;
+		this.updateCoordinates();
+	}
+
+	getZoom(): number {
+		return this.zoom;
+	}
+
+	updateZoom(z: number): void {
+		this.zoom = z;
+		this.updateCoordinates();
 	}
 }
 

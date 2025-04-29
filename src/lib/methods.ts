@@ -165,9 +165,8 @@ export const eulersStep = (
 };
 
 export const approximateDerivate = (x: number, h: number, f: (x: number) => number) => {
-
 	// returns the centered difference
-	return (f(x + h) - f(x - h)) / (2 * h)
+	return (f(x + h) - f(x - h)) / (2 * h);
 };
 
 /**
@@ -286,4 +285,34 @@ export const sign = (x: number): Sign => {
 	} else {
 		return Sign.ZERO;
 	}
+};
+
+/**
+ * Returns the solution to the system Lx = b, where L is lower triangular.
+ */
+export const forward_solve = (L: number[][], size: number, b: number[]) => {
+	let x = new Array(size).fill(0);
+	for (let i = 0; i < size; i++) {
+		let sum = 0;
+		for (let j = 0; j < i; j++) {
+			sum += x[j] * L[i][j];
+		}
+		x[i] = (1 / L[i][i]) * (b[i] - sum);
+	}
+	return x;
+};
+
+/**
+ * Returns the solution to the system Ux = b, where U is upper triangular.
+ */
+export const backward_solve = (U: number[][], size: number, b: number[]) => {
+	let x = new Array(size).fill(0);
+	for (let i = 0; i < size; i++) {
+		let sum = 0;
+		for (let j = 0; j < i; j++) {
+			sum += x[size - 1 - j] * U[size - 1 - i][size - 1 - j];
+		}
+		x[size - 1 - i] = (1 / U[size - 1 - i][size - 1 - i]) * (b[size - 1 - i] - sum);
+	}
+	return x;
 };
