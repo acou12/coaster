@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { RenderingContext, StandardCamera, type Camera } from '$lib/camera';
 	import { CubicCoaster, type Coaster } from '$lib/coaster';
-	import { CubicPiecewise, getCubicSpline, rungeKuttaStep } from '$lib/methods';
+	import {
+		approximateDerivate,
+		CubicPiecewise,
+		getCubicSpline,
+		rungeKuttaStep
+	} from '$lib/methods';
 	import { Point } from '$lib/point';
 	import {
 		drawCoaster,
@@ -22,12 +27,11 @@
 
 	let draggingCamera = false;
 
-	let infoToggled = false;
-
 	let coaster: CubicPiecewise;
 	let area: number;
-	let maxAcceleration: number;
 	let displaySpeed: number;
+	let displayAcceleration: number;
+	let displayJerk: number;
 
 	let speed: number;
 	let x = 0.01;
@@ -47,7 +51,6 @@
 	const updateCoaster = () => {
 		coaster = getCubicSpline(points);
 		area = coaster.computeIntegral() * feetPerPixels();
-		maxAcceleration = coaster.getMaxSecondDerivative() * feetPerPixels();
 	};
 
 	onMount(() => {
@@ -55,20 +58,18 @@
 		camera = new StandardCamera(canvas);
 
 		window.addEventListener('keydown', (e) => {
-			if (e.key === ' ') {
+			if (e.key === 'Shift') {
 				draggingCamera = true;
-			} else if (e.key === 'Escape') {
-				infoToggled = !infoToggled;
 			} else if (e.key === 'Backspace') {
 				points = [new Point(0, 0), new Point(window.innerWidth, 0)];
 				updateCoaster();
 			} else if (e.key === 'p') {
-				x = mousePos.x;
+				x = camera.inverseTransformX(mousePos.x);
 			}
 		});
 
 		window.addEventListener('keyup', (e) => {
-			if (e.key === ' ') {
+			if (e.key === 'Shift') {
 				draggingCamera = false;
 			}
 		});
@@ -130,7 +131,7 @@
 				draggingPoint = -1;
 			}
 		});
-		points.push(new Point(window.innerWidth, 0));
+		points.push(new Point(canvas.clientWidth, 0));
 		updateCoaster();
 		draw(0);
 	});
@@ -141,8 +142,8 @@
 		let delta = time - lastTime;
 		lastTime = time;
 
-		canvas.width = window.innerWidth;
-		canvas.height = window.innerHeight;
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
 
 		context.fillStyle = 'skyblue';
 		context.fillRect(0, 0, canvas.width, canvas.height);
@@ -156,6 +157,28 @@
 		};
 
 		speed = factor * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(x));
+		displayAcceleration =
+			approximateDerivate(
+				x,
+				0.001,
+				(x) =>
+					(factor * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(x)) * feetPerPixels()) /
+					1.467
+			) * 60;
+
+		displayJerk =
+			approximateDerivate(
+				x,
+				0.001,
+				(x) =>
+					approximateDerivate(
+						x,
+						0.001,
+						(y) =>
+							(factor * Math.sqrt((canvas.height * 2) / 3 - coaster.compute(y)) * feetPerPixels()) /
+							1.467
+					) * 60
+			) * 60;
 
 		x = rungeKuttaStep(x, 0, delta / 1000, v_prime);
 		// x = eulersStep(x, 0, 0.1, v_prime);
@@ -194,64 +217,87 @@
 
 <canvas bind:this={canvas}></canvas>
 
-{#if infoToggled}
-	<div class="info">
-		<p>
-			<strong class="underline">Total area of your coaster:</strong>
-			{Math.round(area)} square feet.
-		</p>
-		<p>
-			<strong class="underline">Maximum acceleration:</strong>
-			{Math.round(maxAcceleration * 100) / 100} feet per square second.
-		</p>
-		<p>
-			<strong class="underline">Current coaster speed:</strong>
-			{Math.round(displaySpeed)} miles per hour.
-		</p>
-		<p>
-			<button
-				class:button-selected={debug.components}
-				on:click={() => (debug.components = !debug.components)}>Toggle component drawing</button
-			>
-			<button class:button-selected={debug.forces} on:click={() => (debug.forces = !debug.forces)}
-				>Toggle forces</button
-			>
-			<button class:button-selected={debug.follow} on:click={() => (debug.follow = !debug.follow)}
-				>Toggle follow</button
-			>
-		</p>
-	</div>
-{/if}
+<div class="info">
+	<p>
+		<strong class="underline">Total area of your coaster</strong>
+		<br />
+		{Math.round(area)} square feet.
+	</p>
+	<p>
+		<strong class="underline">Current coaster speed</strong>
+		<br />
+		{Math.round(displaySpeed)} miles per hour.
+	</p>
+	<p>
+		<strong class="underline">Current coaster acceleration</strong>
+		<br />
+		{Math.round(displayAcceleration)} miles per hour per second.
+	</p>
+	<p>
+		<strong class="underline">Current coaster jerk</strong>
+		<br />
+		{Math.round(displayJerk)} miles per hour per second per second.
+	</p>
+	<p>
+		<button
+			class:button-selected={debug.components}
+			on:click={() => (debug.components = !debug.components)}>Toggle component drawing</button
+		>
+		<button class:button-selected={debug.forces} on:click={() => (debug.forces = !debug.forces)}
+			>Toggle forces</button
+		>
+		<button class:button-selected={debug.follow} on:click={() => (debug.follow = !debug.follow)}
+			>Toggle follow</button
+		>
+	</p>
+	<strong class="underline">Controls</strong>
+	<ul>
+		<li>- Place knot: <code>Left Click</code></li>
+		<li>- Move knot: Hold <code>Left Click</code></li>
+		<li>- Clear tracks: <code>Backspace/Delete</code></li>
+		<li>- Re-place coaster: <code>P</code></li>
+		<li>- Pan camera: hold <code>Shift</code></li>
+	</ul>
+</div>
 
 <style>
 	canvas {
 		position: fixed;
 		left: 0;
 		top: 0;
+		width: 70vw;
+		height: 100vh;
 	}
 
 	.info {
 		position: fixed;
-		left: 10vw;
-		width: 80vw;
-		top: 10vh;
-		height: 80vh;
-
-		border-radius: 20px;
+		left: 70vw;
+		width: 30vw;
+		top: 0vh;
+		height: 100vh;
 		padding: 30px;
-
-		background: rgba(0, 0, 0, 0.5);
-		color: white;
 	}
 
 	button {
-		border: solid white 1px;
+		border: solid black 1px;
+		margin: 3px;
 		padding: 3px;
 		border-radius: 3px;
 	}
 
+	button:hover {
+		border-width: 4px;
+		margin: 0;
+	}
+
 	.button-selected {
-		background-color: white;
-		color: black;
+		background-color: black;
+		color: white;
+	}
+
+	code {
+		padding: 3px;
+		border-radius: 5px;
+		background-color: rgb(244, 244, 244);
 	}
 </style>

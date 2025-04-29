@@ -30,6 +30,18 @@ export const drawCoaster = (rc: RenderingContext, precision: number, coaster: Cu
 				rc.context.stroke();
 			}
 		}
+		if (intersections.length > 0) {
+			let last = intersections[intersections.length - 1];
+			if (coaster.computeDerivative(last) > 0) {
+				rc.context.beginPath();
+				rc.context.moveTo(rc.camera.transformX(last), rc.camera.transformY(coaster.compute(last)));
+				rc.context.lineTo(
+					rc.camera.transformX(coaster.x[coaster.x.length - 1]),
+					rc.camera.transformY(coaster.compute(last))
+				);
+				rc.context.stroke();
+			}
+		}
 	}
 
 	/* draw the rail */
